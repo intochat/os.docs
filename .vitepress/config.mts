@@ -44,6 +44,7 @@ const readiness = group('Implementation Readiness', 'readiness', [
 ]);
 const reference = group('Reference', 'reference', [
   ['Evidence & sources', 'evidence'],
+  ['OS 0.3.7', 'releases/os-0.3.7'],
   ['OS 0.3.6', 'releases/os-0.3.6'],
   ['Repository relationship', 'repositories'],
   ['Glossary', 'glossary'],

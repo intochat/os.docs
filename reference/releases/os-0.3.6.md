@@ -2,7 +2,7 @@
 
 **Released 23 October 2026.** [OS 0.3.6](https://github.com/intochat/os/releases/tag/v0.3.6) targets `a2a0c810dcb5ddca819786fd0b5116723b246463`, merged in [PR #293](https://github.com/intochat/os/pull/293) after green checks. [Aggregate CI](https://github.com/intochat/os/actions/runs/39877924198) passed on that exact master commit.
 
-The [publication workflow](https://github.com/intochat/os/actions/runs/39879362302) successfully published 74 NuGet packages and the kernel, UI, and sandbox images, including the image validation steps. Deployed acceptance remains pending.
+The [publication workflow](https://github.com/intochat/os/actions/runs/39879362302) successfully published 74 NuGet packages and the kernel, UI, and sandbox images, including the image validation steps. The recovery behavior was verified on the later [OS 0.3.7](./os-0.3.7) test deployment after its additional UI proxy correction: a fresh routed request completed Memory confirmation and produced the matching reply without Memory fallback. This does not claim that the initial 0.3.6-only rollout passed application acceptance.
 
 ## Conditional text updates
 
