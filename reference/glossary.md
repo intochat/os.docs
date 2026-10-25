@@ -6,10 +6,14 @@ Technical terms used across the IntoChat OS documentation. See [Concepts](../con
 | --- | --- | --- |
 | IntoChat OS | The open-source AI-native operating system: a .NET 11 / Orleans kernel, modules, a C# sandbox and a Flutter shell | Named DigitalBrain before 0.3.0; see the [0.3.0 release notes](./releases/os-0.3.0) |
 | Brain | An ownership scope and state boundary holding a person's apps and state; a circle is a shared brain | Not a synonym for an AI model |
-| Workspace | User environment containing applications, conversations and scoped shared context | Access to one workspace does not grant all connectors or data |
+| Workspace | User environment containing applications, conversations and scoped shared context | Access to one workspace does not grant all connections or data |
 | Application | User-facing task with entry points, workflow, UI, dependencies and permissions | A registered module alone is not an installed usable application |
-| Module | Developer building block, shipped as .NET projects and NuGet packages | Can supply capabilities or integrations used by multiple applications |
-| Connector | Adapter to an external service and its authentication and data interface | An installed adapter does not prove authorized working access |
+| Module | The unit of code; one folder with Contracts, internal neurons, tests and one static ModuleManifest | Can supply capabilities or integrations used by multiple applications |
+| Synapse | The durable routing of a signal kind from one neuron to another | Means routing only; a script file is a reaction |
+| Reaction | A script method that runs when a signal arrives (shape checked by RXN0001/RXN0002) | Was called a synapse before os 0.7.0 |
+| Capability | A versioned contract (storage@1) a module provides and an app requires | Apps require capabilities, never a specific module |
+| Connection | A person's authorised use of a module in a brain; apps never pick a module, the broker resolves connections | A connection proves authorised working access |
+| Topology | Local, local+cloud or cloud; one topology profile class each | Chosen per deployment, not per app |
 | Agent | Model-driven execution behavior using instructions and tools | Neither an application package nor an isolation boundary by itself |
 | Framework | Runtime contracts and composition primitives | Source and API surface |
 | SDK | Framework plus developer tools, templates and test workflow | Compatibility is tracked per release |
