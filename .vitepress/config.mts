@@ -1,84 +1,16 @@
 import { defineConfig } from 'vitepress';
 import { guardDetachedOutline } from './outline-guard.mjs';
 
-const group = (text: string, prefix: string, pages: [string, string][]) => ({
-  text,
-  items: pages.map(([title, path]) => ({ text: title, link: `/${prefix}/${path}` })),
-});
-const vision = group('Product Vision', 'vision', [
-  ['Overview', ''],
-  ['Users & jobs', 'users'],
-  ['Market landscape', 'market'],
-  ['First applications', 'experience'],
-  ['Ecosystem & architecture', 'ecosystem'],
-  ['Catalog & marketplace', 'marketplace'],
-  ['Open source & business', 'commercial'],
-  ['Pricing & unit economics', 'pricing'],
-  ['Hypotheses', 'hypotheses'],
-]);
-const roadmap = group('Product Roadmap', 'roadmap', [
-  ['Overview', ''],
-  ['Deployment first', 'deployment'],
-  ['Workspace & applications', 'core'],
-  ['Pilot & validation', 'pilot'],
-  ['SDK & developers', 'developers'],
-  ['Marketplace launch', 'marketplace'],
-  ['Epics & dependencies', 'epics'],
-  ['Metrics & stage gates', 'metrics'],
-]);
-const readiness = group('Implementation Readiness', 'readiness', [
-  ['Implementation overview', ''],
-  ['Cloud, accounts & Stripe', 'cloud-inventory'],
-  ['AI providers', 'providers'],
-  ['Connectors & modules', 'integrations'],
-  ['Runtime & clients', 'runtime-inventory'],
-  ['Every application', 'applications'],
-  ['Coverage & status method', 'matrix'],
-  ['Architecture map', 'architecture'],
-  ['End-to-end flows', 'flows'],
-  ['Security & sandbox', 'security'],
-  ['Billing & costs', 'billing'],
-  ['Deployment & operations', 'operations'],
-  ['Verification log', 'verification'],
-  ['Risks & backlog', 'backlog'],
-]);
-const reference = group('Reference', 'reference', [
-  ['Evidence & sources', 'evidence'],
-  ['OS 0.3.7', 'releases/os-0.3.7'],
-  ['OS 0.3.6', 'releases/os-0.3.6'],
-  ['Repository relationship', 'repositories'],
-  ['Glossary', 'glossary'],
-  ['Founder decisions', 'decisions'],
-  ['Maintenance', 'maintenance'],
-  ['Site verification', 'site-verification'],
-]);
-const history = {
-  text: 'Preserved records',
-  collapsed: true,
-  items: [
-    { text: 'Earlier handbook overview', link: '/product/previous-overview' },
-    { text: 'Earlier product vision', link: '/product/vision' },
-    { text: 'Requirements', link: '/product/requirements' },
-    { text: 'Readiness assessment', link: '/status' },
-    { text: 'Cloud migration status', link: '/plans/intochat-cloud-migration-status' },
-    { text: 'Cloud migration plan', link: '/plans/intochat-cloud-migration' },
-    { text: 'App journey check', link: '/assessment/app-journey-verification-2026-10-16' },
-    { text: 'Architecture', link: '/architecture' },
-    { text: 'Capabilities', link: '/modules' },
-    { text: 'Operations', link: '/getting-started' },
-    { text: 'Documentation migration', link: '/documentation-migration' },
-  ],
-};
 export default defineConfig({
-  title: 'IntoChat',
-  description: 'Universal AI workspace · Product vision, roadmap and evidence-backed implementation readiness',
-  base: '/digitalbrain.docs/',
+  title: 'IntoChat OS',
+  description: 'Open-Source Cloud-Native Distributed AI Operating System built on DigitalBrain, .NET Aspire, and Orleans',
+  base: '/os.docs/',
   cleanUrls: true,
   appearance: false,
   vite: {
     plugins: [{ name: 'guard-detached-vitepress-outline', enforce: 'pre', transform: guardDetachedOutline }],
   },
-  srcExclude: ['README.md', 'archive/**', 'docs/**'],
+  srcExclude: ['README.md'],
   markdown: {
     config(md) {
       const fence = md.renderer.rules.fence!;
@@ -94,17 +26,44 @@ export default defineConfig({
   themeConfig: {
     logo: '/intochat-mark.svg',
     nav: [
-      { text: 'Product Vision', link: '/vision/' },
-      { text: 'Product Roadmap', link: '/roadmap/' },
-      { text: 'Implementation Readiness', link: '/readiness/' },
+      { text: 'Quickstart', link: '/getting-started' },
+      { text: 'Architecture', link: '/architecture' },
+      { text: 'Creator Loop', link: '/creator-self-improving-loop' },
+      { text: 'Modules & Community', link: '/modules' },
+      { text: 'GitHub', link: 'https://github.com/intochat/os' },
     ],
-    sidebar: [vision, roadmap, readiness, reference, history],
+    sidebar: [
+      {
+        text: 'IntoChat OS',
+        items: [
+          { text: 'Overview', link: '/' },
+          { text: 'Getting Started (Aspire)', link: '/getting-started' },
+          { text: '3-Repository Architecture', link: '/architecture' },
+          { text: 'Brains, Circles & Identity', link: '/concepts' },
+        ],
+      },
+      {
+        text: 'AI Native Shell & Loop',
+        items: [
+          { text: 'Ino Assistant & MemoryNeuron', link: '/ino-and-memory' },
+          { text: 'Creator Self-Improving Loop', link: '/creator-self-improving-loop' },
+          { text: 'C# Sandbox & Live Behaviors', link: '/sandbox-and-live-behaviors' },
+        ],
+      },
+      {
+        text: 'Ecosystem & Community',
+        items: [
+          { text: 'DDD Modules & Trending Requests', link: '/modules' },
+          { text: 'Contributing', link: '/contributing' },
+        ],
+      },
+    ],
     search: { provider: 'local' },
     outline: { level: [2, 3] },
-    docFooter: { prev: 'Previous document', next: 'Continue reading' },
+    docFooter: { prev: 'Previous', next: 'Next' },
     footer: {
-      message: 'Code is evidence of implementation. Executed checks are evidence of tested behavior.',
-      copyright: 'IntoChat product handbook · Evidence reviewed 17 October 2026',
+      message: 'IntoChat OS · Open-Source Cloud-Native Distributed AI Operating System',
+      copyright: 'IntoChat',
     },
   },
 });

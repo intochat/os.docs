@@ -1,13 +1,15 @@
-# Product concepts
+# Brains, Circles & Identity
 
-An **app** is a tool the user creates or installs. Its specification describes intended behavior; its manifest declares operations, settings and connection slots. Compiled behaviors implement it, and a presentation exposes its current UI.
+## The DigitalBrain Scope
 
-A **brain** is an ownership scope. A personal brain holds the person's apps and state. A **circle** is a shared brain with members, chat and shared apps.
+Every user owns a `BrainId`. Inside a brain:
+- **System Neurons**:
+  - `UserSettingsNeuron` (`IUserSettings` at `os.settings`): Stores `DisplayName`, `Theme`, `DefaultModel`, and user variables, emitting `UserSettingsChanged`.
+  - `ProfileNeuron` (`IProfile` at `os.profile`): Stores the user's public handle, bio, and pinned social apps.
+  - `ComputeNeuron` (`ICompute` at `flutter.compute`): Tracks 30-day token and compute spend in micro-dollars across apps (`ino`, `creator`, `settings`).
 
-A **connection** is authorization to use an external account or device. A **connector** implements the bridge. A deployment **integration** provides operator-level configuration; it is not the user's account.
+## Circles & Neuron-Level Access Control (`TargetNeuronKey`)
 
-A **publication** is an immutable app release identified by publisher, source, version and digest. An **installation** is a copy owned by the recipient with its own state and configuration. Program edits detach normal publisher-update eligibility.
-
-A **post** is personal social content. It is distinct from an app publication and from a circle chat message.
-
-A **presentation** is a revision-bound declaration of the app's visible parts. Compilation checks code compatibility; a presentation declares visibility; neither alone proves that the user's task succeeds.
+**Circles** combine social networking with capability-based security:
+- A `Grant` in `IdentityModule` (`identity@1`) can scope access to an entire capability or down to a specific **`TargetNeuronKey`** (neuron-level grant).
+- **Apps as Public Profile (`PostApp`)**: A user's public profile and feed are apps (`[App("post")]`). Users publish posts scoped to a Circle (`public`, `friends`, `private`), and other brains in that Circle can view, interact with, or fork those apps.

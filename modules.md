@@ -1,21 +1,49 @@
-# Capability inventory
+# Modules & Community
 
-OsCatalog is the current composition authority. A module in this list establishes a registered capability family, not a verified customer workflow.
+All official and community DDD capability/connector modules live in the **[`intochat/modules`](https://github.com/intochat/modules)** repository (`E:\intochat\modules`) and are compiled together via `IntoChat.Modules.slnx`.
 
-## Registered modules
+## Core System Modules
 
-Orleans, AI, ArtCraft, ClickHouse, Apps, Flutter, Gmail, Aspire, CSharp, GitHub, Playwright, Windows, Postgres, Qdrant, Salesforce, Supabase, Time, Tools, MCP, Circles, and Flame.
+| Module | Contracts | Description |
+|--------|-----------|-------------|
+| `IntoChat.OS.Modules.Identity` | `IUserSettings`, `IProfile`, `ICompute` | System settings (`theme`, `username`, `model`), public profile (`PostApp` feed), and token metering (`ComputeNeuron`) |
+| `IntoChat.OS.Modules.Memory` | `IMemory` | Zero-Docker local semantic & episodic memory (`MemoryNeuron`) with `Remember`, `Recall`, `List`, and `Forget` |
+| `IntoChat.OS.Modules.Aspire` | `IAspire` | Programmatic `.NET Aspire` dashboard client (`AspireNeuron`) for resource health, logs, traces, and error feeds |
+| `IntoChat.OS.Modules.Apps` | `IAppStudio`, `InoApp`, `CreatorApp`, `PostApp`, `SettingsApp` | Built-in AI-native apps and `IAppStudio` synthesis engine |
+| `IntoChat.OS.Modules.Microsoft.CSharp` | `ICSharpSandbox` | Roslyn compilation, `AppRunner` sandbox container, and live `[Signal]` wiring |
 
-Monnet, Equifax, RiskSeal and Twilio remain in source but are commented out of the inspected production catalog. OsCatalog.Generated returns an empty list. There is no registered external social-network provider in this composition.
+## External Connector Modules
 
-## Shipped app declarations
+| Module | Capabilities |
+|--------|--------------|
+| `IntoChat.OS.Modules.Google` | Gmail (`IGmail` with `[Signal]` on new email webhook), Google Calendar (`IGoogleCalendar`), Google Drive (`IGoogleDrive`), Gemini (`IGemini`) |
+| `IntoChat.OS.Modules.GitHub` | Repositories, issues, pull requests, and webhooks (`IGitHub`) |
+| `IntoChat.OS.Modules.Slack` | Channels, messages, and event webhooks (`ISlack`) |
+| `IntoChat.OS.Modules.Telegram` | Bot messaging and webhook updates (`ITelegram`) |
+| `IntoChat.OS.Modules.Discord` | Guilds, channels, and bot signals (`IDiscord`) |
+| `IntoChat.OS.Modules.Notion` | Pages, databases, and workspace search (`INotion`) |
+| `IntoChat.OS.Modules.Linear` | Issues, cycles, and project tracking (`ILinear`) |
+| `IntoChat.OS.Modules.Jira` | Issues, sprints, and webhooks (`IJira`) |
+| `IntoChat.OS.Modules.Stripe` | Customers, subscriptions, and payment webhooks (`IStripe`) |
+| `IntoChat.OS.Modules.Shopify` | Orders, products, and store webhooks (`IShopify`) |
+| `IntoChat.OS.Modules.Twilio` | SMS, voice, and incoming message webhooks (`ITwilio`) |
+| `IntoChat.OS.Modules.OpenAI` | Chat completions, embeddings, and responses (`IOpenAI`) |
+| `IntoChat.OS.Modules.Anthropic` | Claude messages and tool use (`IAnthropic`) |
+| `IntoChat.OS.Modules.ElevenLabs` | Text-to-speech and voice synthesis (`IElevenLabs`) |
+| `IntoChat.OS.Modules.Brave` | Web search (`IBraveSearch`) |
+| `IntoChat.OS.Modules.Timers` | Scheduled cron and one-shot timers (`ITimer`) |
 
-The inspected features tree contains declarations for BrainView, Calculator, Circle, CircleRoom, DataVisualizer, Engineer, Files, FilmCraft, Friends, Ino, Memory, PhotoCraft, Router, SelfImprove, Settings, Usage, Workspace, CustomerResearcher, SvLoans, and WordCount.
+## Shared SDK Primitives (`MeteredHttpPipeline` & `WebhookGateway`)
 
-A declaration is an inventory item. Whether it is installed by default, configured, supported in a particular profile or ready for release must be established separately.
+Every external connector module uses two shared primitives from `IntoChat.OS.Modules.Sdk`:
 
-## Capability statuses to expose
+1. **`MeteredHttpPipeline`**: Wraps outbound `HttpClient` calls with OAuth token injection, retry policies, rate-limit tracking, and `ICompute` metering.
+2. **`WebhookGateway`**: Provides a unified `/webhooks/{module}/{brainId}` ingress endpoint that validates provider signatures and emits `[Signal]` events directly into the target user's neuron.
 
-Use a consistent product status for each capability: available, requires connection, unavailable in this deployment, experimental, or unsupported. Creator should use the same catalog as the user-facing connection and feature screens.
+## Community Module Leaderboard
 
-See [Social assessment](assessment/social-networks.md) for the distinction between internal social features and real provider integrations.
+Want a new integration (e.g., X/Twitter, WhatsApp, Home Assistant, Spotify)?
+
+1. Open a **[Module Request Issue](https://github.com/intochat/modules/issues/new?template=module-request.yml)** in `intochat/modules`.
+2. Vote on existing requests by reacting with 👍 on the issue description.
+3. Maintainers and community contributors prioritize modules from the **[Trending Module Requests](https://github.com/intochat/modules/issues?q=is%3Aissue+is%3Aopen+label%3Amodule-request+sort%3Areactions-%2B1-desc)** leaderboard.
