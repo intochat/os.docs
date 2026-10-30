@@ -30,6 +30,7 @@ jobs:
       - run: npm test
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run build
       - run: npm run check:links
       - if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5
