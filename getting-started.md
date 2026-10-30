@@ -1,24 +1,88 @@
-# Getting Started with IntoChat OS
+# Getting Started
 
-## 1. Run Locally with `.NET Aspire`
+This guide walks through building, testing, and launching **IntoChat OS** locally with `.NET Aspire` (`aspire start`) and the native Flutter desktop client.
 
-IntoChat OS uses `.NET Aspire` (`IntoChat.OS.AppHost`) to orchestrate the local kernel silo, MCP server, reverse proxies, and the `csharp-sandbox` container:
+## Prerequisites
 
-```bash
-dotnet run --project src/IntoChat.OS.AppHost/IntoChat.OS.AppHost.csproj
+- **.NET 11 SDK** (`11.0.100-preview.3` or newer) & **.NET Aspire CLI** (`aspire`)
+- **Flutter SDK** (`3.41.x` / Dart `3.11+` for the `ui/` workspace)
+- **Docker Desktop** (optional — only needed when running containerized PostgreSQL or external container resources; local development runs out-of-the-box in-memory)
+
+## Repository Layout
+
+Clone the repositories side-by-side under a shared parent directory:
+
+```text
+intochat/
+├── digitalbrain/       # Core C# framework (intochat/digitalbrain)
+├── modules/            # Official DDD modules (intochat/modules)
+├── os/                 # IntoChat OS runtime, Aspire AppHost & Flutter UI (intochat/os)
+│   └── ui/             # Dart Pub workspace (core, ui, shell)
+└── nuget/              # Local NuGet feed for cross-repo package development
 ```
 
-When `IntoChat.OS.AppHost` starts in the default `local` lean profile:
-- **Zero database containers required**: State and encrypted secrets persist in `~/.intochat`, and `MemoryNeuron` (`IMemory`) runs in-process over `VectorIndexNeuron`.
-- **`csharp-sandbox`**: Starts automatically and passes `/health` before `OperatingSystem-a` boots.
-- **`OperatingSystem-front`**: Serves the HTTPS UI endpoint on `https://localhost:5080`.
-- **`intochat-os-mcp-front`**: Serves the MCP server on `http://localhost:5081`.
+## 1. Run `aspire start`
 
-## 2. Run Fast In-Memory Verification (`TestOS.Local()`)
+From the root of `intochat/os`, start the `.NET Aspire` AppHost (`src/IntoChat.OS.AppHost`), the `IntoChat.OS.Kernel` Orleans silo, and the native desktop Flutter shell in the background with `aspire start`:
 
-All module, shell app, and architecture tests run in milliseconds without Docker:
-
-```bash
-dotnet test src/IntoChat.OS.Modules/IntoChat.OS/Apps/tests/IntoChat.OS.Modules.Apps.Tests.Unit/IntoChat.OS.Modules.Apps.Tests.Unit.csproj
-dotnet test src/Testing/IntoChat.OS.Architecture.Tests.Unit/IntoChat.OS.Architecture.Tests.Unit.csproj
+```powershell
+cd E:\intochat\os
+aspire start
 ```
+
+What `aspire start` launches:
+- **`.NET Aspire` Dashboard & AppHost**: Orchestrates all OS resources, health checks, structured logs, and distributed traces.
+- **`IntoChat.OS.Kernel` (`http://localhost:5080`)**: Hosts the Orleans silo, gRPC `NeuronsService`, HTTP/SSE `RuntimeEdge`, unified `/integrations/{provider}` OAuth & webhook endpoints, and built-in `App<TState>` shell apps (`DesktopApp`, `InoApp`, `CreatorApp`, `SettingsApp`, `GalleryApp`, `Files`, `PhotoCraftApp`, `FilmCraftApp`).
+- **WASM Studios (`PhotoCraft` & `FilmCraft`)**: Serves `PhotoCraft` (`http://localhost:18082`) and `FilmCraft` (`http://localhost:18083`) interactive WASM studios rendered via `UI.WebBrowser`.
+- **Native Flutter Desktop Client (`ui/shell`)**: Launches the Whiteboard Home Desk connected to the kernel over HTTP/2 gRPC.
+
+Useful Aspire & launcher commands:
+
+```powershell
+# List running Aspire AppHosts and resources
+aspire ps
+aspire describe
+
+# Stop the running Aspire AppHost
+aspire stop
+
+# Or launch interactively via the repository launcher script
+dotnet run intochat.cs
+```
+
+## 2. Build & Test the C# Stack
+
+Run the automated unit, `[Scenario]` BDD, architecture, and integration test suites across all three repositories:
+
+```powershell
+# 1. DigitalBrain Framework
+dotnet test E:\intochat\digitalbrain\DigitalBrain.slnx
+
+# 2. Official Modules
+dotnet test E:\intochat\modules\IntoChat.Modules.slnx
+
+# 3. IntoChat OS (Unit, Architecture, Integration & E2E)
+dotnet test E:\intochat\os\Intochat.OS.slnx
+```
+
+## 3. Build & Test the Consolidated Flutter UI Workspace (`ui/`)
+
+All Flutter packages live inside the Dart Pub workspace at `e:\intochat\os\ui\` (`ui/core`, `ui/ui`, `ui/shell`), cleanly isolated from MSBuild and `.slnx`:
+
+```powershell
+cd E:\intochat\os\ui
+flutter pub get
+flutter analyze
+flutter test
+```
+
+## 4. Explore the Whiteboard Desktop & Built-In Apps
+
+Once `aspire start` opens the desktop shell:
+1. **Whiteboard Home Desk**: Drag, resize, and **Auto-Arrange** sticky-note smart apps on the canvas. Click the **Pin** button (`LucideIcons.pin`) on any window top bar to lock its position during auto-layout and keep it **always-on-top**.
+2. **Top-Bar Sandbox Controls**:
+   - **Short-click Reload (`LucideIcons.rotateCw`)** to refresh the app's declarative `View` without losing state.
+   - **Long-press (`> 500ms`) or right-click Reload** to hard-restart the isolated app sandbox.
+   - **Settings Popover (`LucideIcons.slidersHorizontal`)** to switch the app's execution mode (`WASM Web UI`, `MCP Server`, `Native Linux CLI`), reset sandbox state, or inspect the app in Creator 3D.
+3. **Talk to Ino (`ino`)**: Send a message in `InoApp`—Ino queries `ReadBrainContext` and recalls relevant facts from `MemoryNeuron` (`IMemory`).
+4. **Build & Debug in Creator (`creator`)**: Select or create an app to watch the 3D `BrainScene3D` halt rotation and smoothly zoom to the target app node, inspect step-by-step plain-English `[Scenario]` BDD results, test in the live `SANDBOX / TEST CREDENTIALS` viewport, and release or roll back semantic versions.
