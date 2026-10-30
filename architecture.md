@@ -1,38 +1,105 @@
-# 3-Repository Architecture
+# System Architecture
 
-IntoChat is partitioned into three clean layers with strict dependency rules enforced by `IntoChat.OS.Architecture.Tests.Unit`:
+IntoChat OS is structured across three cleanly decoupled repositories and six architectural pillars so that the core programming model remains lightweight and framework-pure, domain modules stay reusable, and the operating system runtime handles orchestration, sandboxing, zero-token security, and the declarative Flutter desktop.
+
+## End-to-End Topology
 
 ```mermaid
-flowchart TD
-    subgraph R1["1. intochat/digitalbrain"]
-        DB["DigitalBrain Framework\n• Neuron<TState> & App<TState>\n• [Scenario] & BddNeuron (IBdd)\n• ModuleManifest & Need\n• TestOS.Local() & BddRunner"]
+flowchart TB
+    subgraph UI["Flutter Pub Workspace (e:\\intochat\\os\\ui)"]
+        Core["ui/core (intochat_os_flutter)\ngRPC NeuronChannel & Stream Contracts"]
+        UiKit["ui/ui (intochat_os_ui)\nDeclarative NeuronView, BrainScene3D, UiGalleryScreen, LFP Cards"]
+        Shell["ui/shell (intochat_os_flutter_shell)\nWhiteboardWorkspace, WindowFrame, Pin/Reload/Execution Mode Controls"]
+        Shell --> UiKit --> Core
     end
 
-    subgraph R2["2. intochat/modules"]
-        MOD["21 DDD Capability & Connector Modules\n• AI (IMemory, IAgentContext, RouterNeuron)\n• Google (Gmail, Drive, Auth), GitHub, Salesforce, MCP\n• Aspire (IAspire), Flame (3D), Time, LocalDisk\n• Postgres, Qdrant, ClickHouse, Supabase, Playwright"]
+    subgraph Kernel["IntoChat OS Kernel & Authority (e:\\intochat\\os)"]
+        Grpc["NeuronsService (gRPC) & MapBrainHttp"]
+        Integrations["Unified /integrations/{provider}\nOAuth Callbacks & Inbound Webhooks"]
+        Filter["PlainNeuronCallFilter -> CallFilter -> GrantCallFilterStage"]
+        Broker["ICapabilityBroker & KernelCapabilityConnections"]
+        LocalCloud["Cloud Module: LocalCloudNeuron (Filtered Local IStorage)"]
+        SdkMod["SDK Module: SdkCapabilitySharing & Friend App Grants"]
+        ShellApps["CompiledAppsHost (App<TState>)\nDesktop, Ino, Creator, Settings, Gallery, Files, PhotoCraft, FilmCraft"]
     end
 
-    subgraph R3["3. intochat/os"]
-        KERNEL["IntoChat.OS.Kernel & AppHost\n• WebhookGateway & MeteredHttpPipeline\n• IntoChat.OS.Aspire.Hosting\n• csharp-sandbox (AppRunner + IntoChatOSClient)\n• Identity, Circles, Flutter & Apps\n  (InoApp, CreatorApp, SettingsApp, PostApp)"]
+    subgraph Connectors["3-Part Connection Neurons ({brainId}/connection/{connectorId}/{connectionId})"]
+        ConnNeuron["ConnectionNeuron<TState>\nUseCredentialAsync (Sealed Vault Credentials)"]
+        FriendBind["ConnectionBindings & Friend Capability Grants"]
     end
 
-    R1 --> R2
-    R1 --> R3
-    R2 --> R3
+    subgraph Sandbox["Isolated App Execution (WASM / MCP / Native Linux CLI / C# Sandbox)"]
+        Edge["RuntimeEdge (SSE + Invoke + Report)"]
+        Roslyn["In-Memory Roslyn Compiler & BddRunner ([Scenario])"]
+        WasmPhoto["PhotoCraft WASM Studio (http://localhost:18082)"]
+        WasmFilm["FilmCraft WASM Studio (http://localhost:18083)"]
+    end
+
+    Core <-->|"HTTP/2 gRPC & Watch Stream"| Grpc
+    Grpc --> ShellApps
+    Grpc --> Filter
+    Edge --> Filter
+    Filter --> Broker
+    Broker --> ConnNeuron
+    Broker --> LocalCloud
+    ConnNeuron --> FriendBind
+    Integrations --> ConnNeuron
+    ShellApps --> Roslyn
+    UiKit -->|"UI.WebBrowser"| WasmPhoto
+    UiKit -->|"UI.WebBrowser"| WasmFilm
 ```
 
-## Unified Kernel HTTP & Webhook Gateway
+## 1. Consolidated Flutter UI Workspace & Single Declarative Toolkit
 
-Instead of each connector module re-implementing HTTP retry policies or custom webhook controllers, modules declare `Need.HttpClient` and `Need.Webhook` in their `ModuleManifest`:
+All Flutter packages reside in a single Dart Pub workspace at `e:\intochat\os\ui\`, completely isolated from MSBuild and `Intochat.OS.slnx` (`Directory.Build.props` excludes `ui\**` from MSBuild globs, and zero `.csproj` files exist under `ui/`):
 
-- **`MeteredHttpPipeline`**: Provisions named `IHttpClientFactory` pipelines with per-module rate limiting (`RequestsPerMinute`) and automatic OAuth bearer token injection (`ModuleAuth`).
-- **`WebhookGateway`**: Exposes `POST /webhooks/{moduleId}`, validates signatures, and dispatches `WebhookPayload` directly to the module's target neuron (`TargetNeuronType`).
+```text
+e:\intochat\os\ui\
+├── pubspec.yaml                 # Dart Pub Workspace root (members: core, ui, shell)
+├── analysis_options.yaml
+├── core\                        # package:intochat_os_flutter (gRPC transport & contracts)
+├── ui\                          # package:intochat_os_ui (NeuronView, BrainScene3D, UiGalleryScreen)
+└── shell\                       # package:intochat_os_flutter_shell (Whiteboard desktop & WindowFrame)
+```
 
-## UI Kit, 5 Switchable Identities & 3D Smart Desktop
+Every built-in app (`DesktopApp`, `WorkspaceApp`, `InoApp`, `CreatorApp`, `SettingsApp`, `GalleryApp`, `PostApp`, `PhotoCraftApp`, `FilmCraftApp`, `Files`, `CalculatorApp`) and every runtime Creator app inherits from `DigitalBrain.App<TState>` and returns declarative `DigitalBrain.UI.View` value trees (`Render()` and `RenderSide()`). Legacy per-widget grain contracts (`ILayout`, `IText`, `IButton`) are eliminated in favor of polymorphic `DigitalBrain.UI` nodes projected through `IView` (`ViewNeuron`).
 
-IntoChat OS ships a WinUI 3-inspired glassmorphic UI Kit (`packages/ui` & `IntoChat.OS.Modules.Flutter`) alongside `[App("gallery")]` (`GalleryApp`) and `[App("desktop")]` (`DesktopApp`):
+## 2. Whiteboard Home Desk & Window Top-Bar Controls
 
-- **5 Switchable UI Identities (`StylePreset`)**: `fluent-acrylic` (default translucent obsidian glass with 24px backdrop blur and 1px top-lit specular border), `spatial-glass`, `cyber-synaptic`, `warm-paper`, and `linear-carbon`, persisted in `UserSettingsNeuron` (`IUserSettings.SetUiIdentity`).
-- **4 Dynamic Bar Layouts (`BarLayout`)**: `floating-glass`, `split-top-dock`, `classic-bottom`, and `compact-pill`.
-- **3D DigitalBrain Smart Desktop**: Renders an interactive 3D orbital projection of active neurons, modules, and traveling `[Signal]` photon pulses at 60fps alongside the Ino Smart Brief, Live `[Signal]` Approval queue, and Smart App Launcher.
-- **Canonical `neuron://` Distributed Addressing**: Every file, LFP card, and UI surface exposes a canonical `neuron://{brain}/{module}.{neuron}/{key}` URI (for example, `neuron://owner/drive.files/projects/context.md` in `FilesApp` or `neuron://local/apps/ino#card-1` for scoped LFP card sub-streams).
+- **Whiteboard Home Desk (`WhiteboardWorkspace` & `LiveDesktopShell`)**:
+  - Apps on the desktop operate as resizable sticky-note smart cards and floating windows (`DesktopWindowState` + `SmartStickyCardState`) with interactive corner/edge resize handles (`resizeBy`) and drag-to-move (`moveBy`).
+  - **Auto-Arrange (`DesktopAutoArrange`)** arranges unpinned apps into a clean, non-overlapping responsive grid while preserving the exact `(x, y, width, height)` of any pinned app.
+  - **Always-on-Top Pinning (`LucideIcons.pin`)** locks a window both spatially during auto-arrange and at the top of the z-order stack (`[...unpinnedIds, ...pinnedIds]`).
+- **Window Top-Bar Controls (`WindowFrame`)**:
+  - **Reload / Hard-Restart Sandbox (`LucideIcons.rotateCw`)**: Short click (`< 500ms`) refreshes the declarative `NeuronView`; long press (`>= 500ms`) or right-click dispatches `sandbox-restart` (`hard-restart`) to tear down and recreate the isolated app sandbox.
+  - **Execution Mode & Sandbox Settings Popover (`LucideIcons.slidersHorizontal`)**: Switches per-app execution mode (`WASM Web UI`, `MCP Server`, `Native Linux CLI`), resets sandbox state, or opens `CreatorApp` zoomed into the app's 3D neuron node.
+  - **WASM Studios (`UI.WebBrowser`)**: `PhotoCraftApp` (`http://localhost:18082`) and `FilmCraftApp` (`http://localhost:18083`) embed live WASM studios via `UI.WebBrowser` (`WebBrowserNode`).
+
+## 3. Unified `/integrations/{provider}` & Zero-Token Security Model
+
+All external OAuth flows and inbound webhooks route through a single unified HTTP surface (`/integrations/{provider}`) and address multi-account user connections via 3-part `ConnectionKeys` (`{brainId}/connection/{connectorId}/{connectionId}`).
+
+```mermaid
+sequenceDiagram
+    participant App as Sandboxed App<TState>
+    participant Edge as RuntimeEdge / CallFilter
+    participant Grant as GrantCallFilterStage
+    participant Broker as ICapabilityBroker
+    participant Conn as ConnectionNeuron<TState>
+    participant Vault as BrainSecretSealer / Vault
+
+    App->>Broker: Resolve<IStorage>(brain) / ResolveAll<IStorage>(brain)
+    Broker->>Edge: Invoke Capability Call (Caller = AppPrincipal)
+    Edge->>Grant: AuthorizeAsync(CallRequest)
+    Grant-->>Edge: Allowed (Capability Grant or Friend Binding)
+    Edge->>Conn: Execute Capability Operation
+    Conn->>Vault: Unseal OAuth Credential Inside Grain (UseCredentialAsync)
+    Conn->>Conn: Call External Provider HTTP API with Bearer Token
+    Conn-->>App: Sanitized Domain Result (Zero Raw Token Exposure)
+```
+
+1. **Zero Raw Token Exposure**: `ConnectionNeuron<TState>.UseCredentialAsync` unseals credentials strictly inside the grain activation (`IBrainSecretSealer`), refreshes expired OAuth tokens internally, and **never** returns raw access tokens, refresh tokens, or API keys across grain boundaries.
+2. **Call-Filter Enforcement**: `RuntimeEdge`, `PlainNeuronCallFilter`, and `GrantCallFilterStage` reject any attempt by an app principal (`app:*`) to invoke `ISecretValueSource`, `IVault`, or internal credential methods directly.
+3. **Core OS Capabilities (`cloud` & `sdk`)**:
+   - `LocalCloudNeuron` (`[Neuron("local-cloud")]`) provides path-traversal-safe local `IStorage` (`storage@1`) scoped to the user's local cloud root.
+   - `SdkCapabilitySharing` and `ConnectionBindings` enable friend-style capability sharing between trusted apps (`ino` <-> `photocraft`, `ino` <-> `files`, `creator` <-> `bdd`).

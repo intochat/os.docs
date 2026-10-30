@@ -1,54 +1,63 @@
-# C# Sandbox & Live Behaviors
+# Sandbox Execution Modes, Window Controls & Live Behaviors
 
-IntoChat OS executes user and AI-created C# apps inside an isolated Docker container (`csharp-sandbox`, implemented in `src/IntoChat.OS.Modules.Microsoft.CSharp.Sandbox`), while connecting them back to the user's Digital Brain over a scoped HTTP + SSE connection (`IntoChatOSConnection`).
+IntoChat OS combines an isolated multi-mode sandbox architecture with responsive window controls and reactive `[On("sourceKey")]` signal subscriptions.
 
-## How `csharp-sandbox` Works
+## 1. Window Top-Bar Controls & Per-App Execution Modes
 
-1. **Dynamic Compilation with Roslyn**: When an app is deployed, `AppCompiler` compiles the C# source files in memory against `DigitalBrain.dll` and module contracts, enforcing Roslyn analyzers (`DB0020`–`DB0024`).
-2. **Scoped `IntoChatOSConnection`**: The sandbox receives the user's brain identifier, OS gateway URL, and a scoped authentication token.
-3. **Resolving Neurons (`Get<T>`)**:
-   - Inside an `App<TState>`, calling `Get<IUserSettings>("settings")` invokes `AppRunner.ResolveNeuron(typeof(IUserSettings), "settings")`.
-   - Relative keys (`"settings"`) resolve via `brain.Neuron<T>("settings")` (`{brain}/settings`).
-   - Full cross-brain keys (`"alice/profile"`) resolve via `brain.Get<T>("alice/profile")` and pass through `GrantsInterceptor` for Circle/Grant permission checks.
+Every app window (`WindowFrame` in `e:\intochat\os\ui\shell\lib\desktop\window_frame.dart`) on the Whiteboard Home Desk provides four top-bar controls on the right side of its title bar:
 
-## Two Execution Modes for Apps
+1. **Pin Always-on-Top (`LucideIcons.pin` / `LucideIcons.pinOff`)**:
+   - Locks the app's exact `(x, y, width, height)` position on the whiteboard so **Auto-Arrange** never displaces it.
+   - Elevates the window into the pinned z-order partition (`[...unpinnedIds, ...pinnedIds]`) so it remains strictly always-on-top above unpinned windows.
+2. **Reload View vs. Hard-Restart Sandbox (`LucideIcons.rotateCw`)**:
+   - **Short Click (`< 500ms`)**: Triggers `onReload`, refreshing the declarative `NeuronView` without losing in-memory app or sandbox state.
+   - **Long Press (`>= 500ms`) or Right-Click**: Triggers `onHardRestartSandbox`, dispatching a `sandbox-restart` (`hard-restart`) signal that tears down and recreates the isolated app sandbox container and resets its initial state.
+3. **Execution Mode & Sandbox Settings Popover (`LucideIcons.slidersHorizontal`)**:
+   - Opens an interactive popover allowing per-app selection of the execution mode:
+     - **`WASM Web UI` (`wasm-ui`)**: Runs interactive browser/WASM studio surfaces via `UI.WebBrowser`.
+     - **`MCP Server` (`mcp`)**: Exposes and executes the app's tools over the Model Context Protocol (`craft-mcp`).
+     - **`Native Linux CLI` (`native-linux`)**: Executes commands inside an isolated Linux container/CLI runner.
+   - Also provides quick actions to **Reset Sandbox State** or **Inspect in Creator 3D**.
 
-### 1. Reactive UI Turns (`[On]`)
+## 2. WASM Studios (`PhotoCraft` & `FilmCraft`) via `UI.WebBrowser`
 
-Parameterless `[On]` (or `[On("ActionName")]` with parameters) methods are user-callable UI turns:
+Creative studio apps use `UI.WebBrowser` (`WebBrowserNode` in `DigitalBrain.UI`) to embed high-framerate WASM studios directly inside declarative `App<TState>` views:
+- **`PhotoCraftApp` (`photocraft`)**: Renders the PhotoCraft WASM Studio at `http://localhost:18082` (`UI.WebBrowser(State.WebUrl ?? "http://localhost:18082", "PhotoCraft WASM Studio", "photocraft-wasm", executionMode: State.ExecutionMode)`), alongside layer management, filter pipelines, and AI image generation tools.
+- **`FilmCraftApp` (`filmcraft`)**: Renders the FilmCraft WASM Studio at `http://localhost:18083` (`UI.WebBrowser(State.WebUrl ?? "http://localhost:18083", "FilmCraft WASM Studio", "filmcraft-wasm", executionMode: State.ExecutionMode)`), supporting multi-track timeline editing, clip transitions, and render export.
 
-```csharp
-[On]
-public async Task Ask(string prompt)
-{
-    var memory = Get<IMemory>("memory");
-    await memory.Remember(prompt);
-    State = State with { LastPrompt = prompt };
-}
+## 3. Isolated C# Sandbox (`csharp-sandbox` & `RuntimeEdge`)
+
+User-authored and runtime C# apps can execute out-of-process inside `IntoChat.OS.Sandbox.CSharp` (`AppRunner`), communicating with the OS kernel over HTTP + Server-Sent Events (`RuntimeEdge`):
+
+- **SSE Event Loop (`/edge/{appKey}/events`)**: Streams incoming signals and UI interactions to the sandboxed `App<TState>` instance.
+- **View & State Reporting (`/edge/{appKey}/report`)**: Publishes updated `DigitalBrain.UI.View` trees and serialized state snapshots back to the kernel.
+- **Zero-Token Capability Proxy (`/edge/{appKey}/invoke`)**: Every outbound neuron or capability call from the sandbox carries the caller's `AppPrincipal` (`app:{appKey}`) and passes through `PlainNeuronCallFilter` and `GrantCallFilterStage`. Sandboxed code never receives raw OAuth tokens or vault secrets.
+
+```powershell
+dotnet run --project src/IntoChat.OS.Modules/Microsoft/CSharp/src/IntoChat.OS.Sandbox.CSharp -- `
+  --assembly MyCustomApp.dll `
+  --edge http://localhost:5080/edge/my-app
 ```
 
-When a user clicks a button or submits a form in the UI:
-1. The OS calls `POST /run` on `csharp-sandbox` with the current `State` JSON and operation arguments.
-2. `AppRunner` hydrates the `App<TState>`, executes the `[On]` method, calls `Render()`, and returns the updated `State` + `UiNode` tree.
+## 4. Live Behaviors (`[On("sourceKey")]`)
 
-### 2. Live Background Signal Subscriptions (`[On("sourceKey")]`)
-
-Apps can also react autonomously to live background `[Signal]`s emitted by any neuron in the user's brain (such as a new email arriving on a webhook, a timer firing, or user settings changing):
+Apps and neurons can subscribe declaratively to signals emitted by any other neuron in the brain using `[On("sourceKey")]`:
 
 ```csharp
-[On("settings", Contract = typeof(IUserSettings))]
-public void OnSettingsChanged(UserSettingsChanged? changed)
+[App("inbox-digest", Title = "Inbox Digest", Icon = "mail")]
+public sealed class InboxDigestApp : App<InboxDigestState>
 {
-    if (changed is null) return;
-    State = State with
+    // Automatically invoked whenever the "gmail" neuron emits an EmailReceivedSignal
+    [On("gmail")]
+    public void OnEmailReceived(EmailReceivedSignal signal)
     {
-        UserDisplayName = changed.DisplayName,
-        DefaultModel = changed.DefaultModel,
-    };
+        State.RecentSubjects.Insert(0, $"{signal.From}: {signal.Subject}");
+    }
+
+    public override View Render() =>
+        UI.Card("Recent Emails",
+            UI.Column(State.RecentSubjects.Select(s => UI.Text(s)).ToArray()));
 }
 ```
 
-How live subscriptions work under the hood:
-- `AppDefinition.From(typeof(TApp))` discovers all `[On("sourceKey")]` methods whose single parameter is a `[Signal]` record type and stores them in `AppDefinition.SignalSubscriptions`.
-- In `TestOS` (`InstalledApp<TApp>`), the test harness automatically subscribes to the target neuron's signal stream via `SignalSubscriptionWire` and executes an app turn whenever the signal fires.
-- In `csharp-sandbox` (`AppRunner`), the runner subscribes to the remote neuron proxy's `[Signal]` over SSE (`IntoChatOSConnection`) and invokes the handler method automatically whenever an event arrives.
+When `gmail` emits `EmailReceivedSignal`, the runtime routes the signal across the durable synapse to `InboxDigestApp.OnEmailReceived`, persists the updated state, and pushes the re-rendered `View` to the Flutter desktop over gRPC.

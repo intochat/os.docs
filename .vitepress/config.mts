@@ -3,7 +3,8 @@ import { guardDetachedOutline } from './outline-guard.mjs';
 
 export default defineConfig({
   title: 'IntoChat OS',
-  description: 'Open-Source Cloud-Native Distributed AI Operating System built on DigitalBrain, .NET Aspire, and Orleans',
+  description:
+    'Open-Source Cloud-Native Distributed AI Operating System built on DigitalBrain, .NET Aspire, and Orleans',
   base: '/os.docs/',
   cleanUrls: true,
   appearance: false,
