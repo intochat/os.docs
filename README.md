@@ -5,7 +5,7 @@ Official VitePress documentation for **[`intochat/os`](https://github.com/intoch
 ## Pages
 
 - [`index.md`](./index.md) — Home page & six-pillar architectural overview
-- [`getting-started.md`](./getting-started.md) — Local `dotnet run intochat.cs start` (`.NET Aspire` + Flutter desktop client) quickstart & verification
+- [`getting-started.md`](./getting-started.md) — Local `aspire start` (`.NET Aspire` + Flutter desktop client) quickstart & verification
 - [`architecture.md`](./architecture.md) — 3-repository topology, consolidated `ui/` workspace, Whiteboard desktop & zero-token security architecture
 - [`concepts.md`](./concepts.md) — Brains, Neurons, `App<TState>`, `DigitalBrain.UI` (`UI.WebBrowser`, `UI.BrainScene`), 3-part `ConnectionKeys`, `/integrations/{provider}`, and Circles
 - [`ino-and-memory.md`](./ino-and-memory.md) — `InoApp`, `ReadBrainContext`, and `MemoryNeuron` (`IMemory`)

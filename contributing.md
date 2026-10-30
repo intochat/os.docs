@@ -6,7 +6,7 @@ Thank you for contributing to the IntoChat ecosystem!
 
 - **[`intochat/digitalbrain`](https://github.com/intochat/digitalbrain)**: Contribute to the core C# framework (`INeuron`, `App<TState>`, `DigitalBrain.UI` declarative value trees, `UI.WebBrowser`, `BrainSceneNode`, `BddNeuron`, `ScenarioStepVerdict`, `TestBrain`, and Roslyn analyzers).
 - **[`intochat/modules`](https://github.com/intochat/modules)**: Build new zero-token DDD capability/connector modules (`ConnectionNeuron<TState>.UseCredentialAsync`) or enhance creative studios (`ArtCraft`).
-- **[`intochat/os`](https://github.com/intochat/os)**: Contribute to the Orleans runtime host (`IntoChat.OS.Kernel`), `.NET Aspire` orchestration (`intochat.cs start`), consolidated Flutter UI workspace (`e:\intochat\os\ui\`), built-in `App<TState>` apps (`DesktopApp`, `InoApp`, `CreatorApp`, `SettingsApp`, `PhotoCraftApp`, `FilmCraftApp`, `Files`), `/integrations/{provider}`, `LocalCloudNeuron`, and zero-token security.
+- **[`intochat/os`](https://github.com/intochat/os)**: Contribute to the Orleans runtime host (`IntoChat.OS.Kernel`), `.NET Aspire` orchestration (`aspire start` / `intochat.cs`), consolidated Flutter UI workspace (`e:\intochat\os\ui\`), built-in `App<TState>` apps (`DesktopApp`, `InoApp`, `CreatorApp`, `SettingsApp`, `PhotoCraftApp`, `FilmCraftApp`, `Files`), `/integrations/{provider}`, `LocalCloudNeuron`, and zero-token security.
 
 ## Development Rules & Invariants
 
@@ -36,5 +36,5 @@ flutter test
 
 # 5. Start OS & Desktop Client via Aspire
 cd E:\intochat\os
-dotnet run intochat.cs start
+aspire start
 ```

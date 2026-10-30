@@ -1,10 +1,10 @@
 # Getting Started
 
-This guide walks through building, testing, and launching **IntoChat OS** locally with `.NET Aspire` and the native Flutter desktop client.
+This guide walks through building, testing, and launching **IntoChat OS** locally with `.NET Aspire` (`aspire start`) and the native Flutter desktop client.
 
 ## Prerequisites
 
-- **.NET 11 SDK** (`11.0.100-preview.3` or newer)
+- **.NET 11 SDK** (`11.0.100-preview.3` or newer) & **.NET Aspire CLI** (`aspire`)
 - **Flutter SDK** (`3.41.x` / Dart `3.11+` for the `ui/` workspace)
 - **Docker Desktop** (optional — only needed when running containerized PostgreSQL or external container resources; local development runs out-of-the-box in-memory)
 
@@ -21,32 +21,33 @@ intochat/
 └── nuget/              # Local NuGet feed for cross-repo package development
 ```
 
-## 1. Run `aspire start` (`dotnet run intochat.cs start`)
+## 1. Run `aspire start`
 
-From the root of `intochat/os`, start the full `.NET Aspire` orchestrator, the `IntoChat.OS.Kernel` Orleans silo, and the native desktop Flutter shell with a single command:
+From the root of `intochat/os`, start the `.NET Aspire` AppHost (`src/IntoChat.OS.AppHost`), the `IntoChat.OS.Kernel` Orleans silo, and the native desktop Flutter shell in the background with `aspire start`:
 
 ```powershell
 cd E:\intochat\os
-dotnet run intochat.cs start
+aspire start
 ```
 
-What `dotnet run intochat.cs start` launches:
+What `aspire start` launches:
 - **`.NET Aspire` Dashboard & AppHost**: Orchestrates all OS resources, health checks, structured logs, and distributed traces.
 - **`IntoChat.OS.Kernel` (`http://localhost:5080`)**: Hosts the Orleans silo, gRPC `NeuronsService`, HTTP/SSE `RuntimeEdge`, unified `/integrations/{provider}` OAuth & webhook endpoints, and built-in `App<TState>` shell apps (`DesktopApp`, `InoApp`, `CreatorApp`, `SettingsApp`, `GalleryApp`, `Files`, `PhotoCraftApp`, `FilmCraftApp`).
 - **WASM Studios (`PhotoCraft` & `FilmCraft`)**: Serves `PhotoCraft` (`http://localhost:18082`) and `FilmCraft` (`http://localhost:18083`) interactive WASM studios rendered via `UI.WebBrowser`.
 - **Native Flutter Desktop Client (`ui/shell`)**: Launches the Whiteboard Home Desk connected to the kernel over HTTP/2 gRPC.
 
-Useful CLI flags:
+Useful Aspire & launcher commands:
 
 ```powershell
-# Start in detached background mode and wait until kernel + shell are healthy
-dotnet run intochat.cs start --detach
+# List running Aspire AppHosts and resources
+aspire ps
+aspire describe
 
-# Inspect running OS status and endpoints
-dotnet run intochat.cs status
+# Stop the running Aspire AppHost
+aspire stop
 
-# Stop all running Aspire and kernel processes
-dotnet run intochat.cs stop
+# Or launch interactively via the repository launcher script
+dotnet run intochat.cs
 ```
 
 ## 2. Build & Test the C# Stack
@@ -77,7 +78,7 @@ flutter test
 
 ## 4. Explore the Whiteboard Desktop & Built-In Apps
 
-Once `dotnet run intochat.cs start` opens the desktop shell:
+Once `aspire start` opens the desktop shell:
 1. **Whiteboard Home Desk**: Drag, resize, and **Auto-Arrange** sticky-note smart apps on the canvas. Click the **Pin** button (`LucideIcons.pin`) on any window top bar to lock its position during auto-layout and keep it **always-on-top**.
 2. **Top-Bar Sandbox Controls**:
    - **Short-click Reload (`LucideIcons.rotateCw`)** to refresh the app's declarative `View` without losing state.
